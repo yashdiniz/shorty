@@ -1,0 +1,195 @@
+openapi: 3.0.3
+info:
+  title: Shorty
+  description: URL Shortinator
+  license:
+    name: MIT
+  version: 0.0.1
+servers:
+  - url: localhost:8100
+tags:
+  - name: url
+    description: Access to manage your urls
+  - name: sys
+    description: Check the server version and health
+  - name: shortURL
+    description: Access shortURLs
+paths:
+  /{urlId}:
+    get:
+      tags:
+        - shortURL
+      summary: Redirect to the full url from the database
+      parameters:
+      - name: urlId
+        in: path
+        required: true
+        schema:
+          type: string
+          example: base62
+      responses:
+        '302':
+          description: Redirect to full URL
+        '404':
+          description: Not found
+  /url/{urlId}:
+    get:
+      tags:
+        - url
+      summary: List details and analytics about a url
+      parameters:
+      - name: urlId
+        in: path
+        required: true
+        schema:
+          type: string
+          example: base62
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UrlAnalytics'
+        '404':
+          description: Not Found
+      security:
+        - api_key: []
+    delete:
+      tags:
+        - url
+      summary: Disable the url
+      parameters:
+      - name: urlId
+        in: path
+        required: true
+        schema:
+          type: string
+          example: base62
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Not Found
+      security:
+        - api_key: []
+  /url:
+    get:
+      tags:
+        - url
+      summary: List all your urls (paginated)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UrlBase'
+      security:
+        - api_key: []
+    post:
+      tags:
+        - url
+      summary: Create a new short url
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UrlRequest'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UrlBase'
+      security:
+        - api_key: []
+
+
+  /sys/version:
+    get:
+      tags:
+        - sys
+      summary: Get the git & deployment version
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Version'
+  /sys/healthz:
+    get:
+      tags:
+        - sys
+      summary: Healthcheck endpoint
+      responses:
+        '200':
+          description: system is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Healthz'
+        '500':
+          description: system is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Healthz'
+components:
+  schemas:
+    UrlRequest:
+      type: object
+      properties:
+        destinationUrl:
+          type: string
+    UrlBase:
+      type: object
+      properties:
+        urlId:
+          type: string
+        destinationUrl:
+          type: string
+        ctime:
+          type: string
+          format: date-time
+    UrlAnalytics:
+      allOf:
+        - $ref: '#/components/schemas/UrlBase'
+        - type: object
+          properties:
+            clicks:
+              type: integer
+    Version:
+      type: object
+      properties:
+        gitRef:
+          type: string
+          example: g1a2b3c
+        buildRef:
+          type: string
+          example: 4x5y6z
+    Healthz:
+      type: object
+      properties:
+        status:
+          type: string
+          example: healthy
+          enum:
+            - healthy
+            - unhealthy
+        dbConn:
+          type: string
+          example: passed
+          enum:
+            - passed
+            - failed
+            - unknown
+  securitySchemes:
+    api_key:
+      type: apiKey
+      name: Authorization
+      in: header
