@@ -1,0 +1,10 @@
+host: localhost:6010
+info:
+  contact:
+    name: JadeMaveric
+    url: github.com/JadeMaveric
+  description: This is a dummy project for the shorty url shortner
+  title: Shorty - URL Shortner API
+  version: "0.1"
+paths: {}
+swagger: "2.0"

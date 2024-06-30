@@ -1,0 +1,14 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is a dummy project for the shorty url shortner",
+        "title": "Shorty - URL Shortner API",
+        "contact": {
+            "name": "JadeMaveric",
+            "url": "github.com/JadeMaveric"
+        },
+        "version": "0.1"
+    },
+    "host": "localhost:6010",
+    "paths": {}
+}
