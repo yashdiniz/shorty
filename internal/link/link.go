@@ -7,13 +7,13 @@ import (
 )
 
 type LinkService interface {
-	AddLink(link string) (*Link, error)
+	AddLink(target string) (*Link, error)
 	FindLink(hash string) (*Link, error)
 }
 
 type Link struct {
-	target string
-	hash string
+	Target string
+	Hash   string
 }
 
 type Hasher interface {

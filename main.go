@@ -8,7 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/julienschmidt/httprouter"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/jademaveric/shorty/internal/link"
@@ -49,18 +50,50 @@ func mainOG() {
 }
 
 func main() {
-	router := httprouter.New()
+	log.Println("Server is starting up")
 
-	router.GET("/", Index)
-  router.GET("/hello/:name", Hello)
+	log.Println("Connecting to database...")
+	db, err := sql.Open("sqlite3", "file:links.db")
+	if err != nil {
+		panic(err)
+	}
 
-  log.Fatal(http.ListenAndServe(":7000", router))
-}
+	svc := link.NewSqliteLinkService(db, &link.DefaultHasher{})
 
-func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	fmt.Fprint(w, "Welcome!\n")
-}
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 
-func Hello(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	fmt.Fprintf(w, "hello, %s!\n", ps.ByName("name"))
+	r.Get("/{hash}", func(w http.ResponseWriter, r *http.Request) {
+		hash := chi.URLParam(r, "hash")
+		link, err := svc.FindLink(hash)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+
+		// w.WriteHeader(307)
+		http.Redirect(w, r, link.Target, http.StatusTemporaryRedirect)
+	})
+
+	r.Get("/add-new", func(w http.ResponseWriter, r *http.Request) {
+		target := r.URL.Query().Get("target")
+		if target == "" {
+			w.WriteHeader(400)
+			fmt.Fprintln(w, "Invalid target")
+		}
+
+		link, err := svc.AddLink(target)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintln(w, err.Error())
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprintln(w, *link)
+	})
+
+	log.Println("Server started on :7000")
+	log.Fatal(http.ListenAndServe(":7000", r))
 }
