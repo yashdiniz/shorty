@@ -8,7 +8,6 @@ import (
 	"os"
 	"time"
 
-	"shorty/internal/utils"
 	"shorty/svc/link"
 )
 

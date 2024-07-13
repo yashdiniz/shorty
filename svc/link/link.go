@@ -1,6 +1,8 @@
 package link
 
 import (
+	"log"
+	"shorty/db"
 	"shorty/internal/utils"
 )
 
@@ -25,31 +27,37 @@ type LinkService interface {
 }
 
 type linkSvcImpl struct {
-	db [](*Link)
+	dal db.LinkDAL
 }
 
 func New() LinkService {
+	dal, err := db.NewLinkDAL()
+	if err != nil {
+		log.Panicf("Cannot connect to database: %w\n", err)
+	}
+
 	svc := linkSvcImpl{
-		db: make([]*Link, 0),
+		dal: dal,
 	}
 
 	return &svc
 }
 
 func (s *linkSvcImpl) CreateLink(params LinkCreateParams) *Link {
-	l := Link{
-		Name:   params.Name,
-		Target: params.Target,
-	}
+  l, err := s.dal.Insert(db.LinkModel{
+    Id: utils.GenerateKey(4),
+    Name: params.Name,
+    Target: params.Target,
+    Ctime: utils.GetISOTimestamp(nil),
+    Mtime: utils.GetISOTimestamp(nil),
+    Visits: 0,
+  })
 
-	l.Id = utils.GenerateKey(4)
-	l.Ctime = utils.GetISOTimestamp(nil)
-	l.Mtime = utils.GetISOTimestamp(nil)
+  if err == nil {
+    log.Panicln()("Could not save")
+  }
 
-	// TODO: Use a db wrapper
-	s.db = append(s.db, &l)
-
-	return &l
+	// return &l
 }
 
 func (s *linkSvcImpl) GetAllLinks() [](*Link) {
