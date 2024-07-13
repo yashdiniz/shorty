@@ -3,21 +3,25 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
+	"net/http"
 	"os"
 	"strings"
 
-  _ "github.com/mattn/go-sqlite3"
+	"github.com/julienschmidt/httprouter"
+	_ "github.com/mattn/go-sqlite3"
+
 	"github.com/jademaveric/shorty/internal/link"
 )
 
 // TEST
-func main() {
+func mainOG() {
 	// svc := link.NewMemoryLinkService(make(map[string]*link.Link), &link.DefaultHasher{})
 
-  db, err := sql.Open("sqlite3", "file:links.db")
-  if err != nil {
-    panic(err)
-  }
+	db, err := sql.Open("sqlite3", "file:links.db")
+	if err != nil {
+		panic(err)
+	}
 	svc := link.NewSqliteLinkService(db, &link.DefaultHasher{})
 
 	for true {
@@ -42,4 +46,21 @@ func main() {
 			fmt.Println("Unknown option")
 		}
 	}
+}
+
+func main() {
+	router := httprouter.New()
+
+	router.GET("/", Index)
+  router.GET("/hello/:name", Hello)
+
+  log.Fatal(http.ListenAndServe(":7000", router))
+}
+
+func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	fmt.Fprint(w, "Welcome!\n")
+}
+
+func Hello(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	fmt.Fprintf(w, "hello, %s!\n", ps.ByName("name"))
 }
