@@ -9,6 +9,8 @@ import (
 type LinkService interface {
 	AddLink(target string) (*Link, error)
 	FindLink(hash string) (*Link, error)
+	DeleteLink(hash string) (*Link, error)
+	ListLinks() ([](*Link), error)
 }
 
 type Link struct {
