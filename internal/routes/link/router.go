@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
 	"github.com/jademaveric/shorty/internal/svc/link"
 )
 
@@ -47,15 +48,14 @@ func (lr *LinkRouter) RedirectHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (lr *LinkRouter) getLinkRpcHandler(w http.ResponseWriter, r *http.Request) {
-	hash := r.URL.Query().Get("target")
+	hash := r.URL.Query().Get("hash")
 	link, err := lr.svc.FindLink(hash)
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintln(w, *link)
+	render.Render(w, r, NewLinkResponse(link))
 }
 
 func (lr *LinkRouter) addLinkRpcHandler(w http.ResponseWriter, r *http.Request) {
@@ -72,8 +72,7 @@ func (lr *LinkRouter) addLinkRpcHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	fmt.Fprintln(w, *link)
+	render.Render(w, r, NewLinkResponse(link))
 }
 
 func (lr *LinkRouter) deleteLinkRpcHandler(w http.ResponseWriter, r *http.Request) {
@@ -88,8 +87,7 @@ func (lr *LinkRouter) deleteLinkRpcHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintln(w, *link)
+	render.Render(w, r, NewLinkResponse(link))
 }
 
 func (lr *LinkRouter) listLinksRpcHandler(w http.ResponseWriter, r *http.Request) {
@@ -99,8 +97,10 @@ func (lr *LinkRouter) listLinksRpcHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	for _, l := range links {
-		fmt.Fprintln(w, *l)
+	resp := make([]render.Renderer, len(links))
+	for i, l := range links {
+		resp[i] = NewLinkResponse(l)
 	}
+
+	render.RenderList(w, r, resp)
 }
