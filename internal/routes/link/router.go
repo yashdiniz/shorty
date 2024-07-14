@@ -23,8 +23,11 @@ func (lr *LinkRouter) GetRouter() *chi.Mux {
 	r.Get("/{hash}/redirect", lr.RedirectHandler)
 
 	// TODO: Restful routes
+	r.Post("/", lr.addLinkRpcHandler)
+	r.Delete("/{hash}", lr.deleteLinkRpcHandler)
 
 	// RPC routes so I can test from the browser
+	r.Get("/rpc/info", lr.getLinkRpcHandler)
 	r.Get("/rpc/add", lr.addLinkRpcHandler)
 	r.Get("/rpc/delete", lr.deleteLinkRpcHandler)
 	r.Get("/rpc/list", lr.listLinksRpcHandler)
@@ -41,6 +44,18 @@ func (lr *LinkRouter) RedirectHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, link.Target, http.StatusTemporaryRedirect) // StatusTemporaryRedirect
+}
+
+func (lr *LinkRouter) getLinkRpcHandler(w http.ResponseWriter, r *http.Request) {
+	hash := r.URL.Query().Get("target")
+	link, err := lr.svc.FindLink(hash)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintln(w, *link)
 }
 
 func (lr *LinkRouter) addLinkRpcHandler(w http.ResponseWriter, r *http.Request) {
